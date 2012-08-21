@@ -4,3 +4,8 @@ priv
 *.o
 *.beam
 *.plt
+ebin/
+erl_crash.dump
+.~/
+logs/
+erlsqlmigrate

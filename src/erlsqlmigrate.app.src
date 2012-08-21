@@ -1,0 +1,7 @@
+{application, erlsqlmigrate,
+ [{description, "SQL Migration Tool"},
+  {vsn, git},
+  {modules, []},
+  {registered, []},
+  {applications, [kernel, stdlib, crypto, ssl, epgsql, getopt]},
+  {included_applications, []}]}.
