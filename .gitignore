@@ -9,3 +9,5 @@ erl_crash.dump
 .~/
 logs/
 erlsqlmigrate
+config/
+migrations/
