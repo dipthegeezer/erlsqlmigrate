@@ -1,10 +1,10 @@
 %% ------------------------------------------------------------------
 %% Record Definitions
 %% ------------------------------------------------------------------
--record(migration, { date,
-                     name,
-                     title,
-                     up_path,
-                     down_path,
-                     up,
-                     down }).
+-record(migration, { date :: integer(),
+                     name :: string(),
+                     title :: string(),
+                     up_path :: filelib:dirname(),
+                     down_path :: filelib:dirname(),
+                     up :: string(),
+                     down :: string()}).

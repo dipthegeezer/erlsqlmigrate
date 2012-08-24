@@ -1,3 +1,8 @@
+%% @author Dipesh Patel <dipthegeezer.opensource@gmail.com>
+%% @copyright 2012 Dipesh Patel.
+
+%% @doc The entry point into migrating a database.
+
 -module(erlsqlmigrate).
 
 %% ------------------------------------------------------------------
@@ -8,12 +13,9 @@
 -export([create/3,up/3,down/3]).
 
 %% ------------------------------------------------------------------
-%% Record Definitions
-%% ------------------------------------------------------------------
-
-%% ------------------------------------------------------------------
 %% API Function Definitions
 %% ------------------------------------------------------------------
+
 main([]) ->
     usage();
 
@@ -90,10 +92,9 @@ parse_command_args(["create"]) ->
 parse_command_args(["down", Name]) ->
     {down,Name};
 parse_command_args(["down"]) ->
-    io:format("~nMust specify a name with `down` command~n~n"),
-    error;
+    {down,[]};
 parse_command_args(["up"]) ->
-    {up,""};
+    {up,[]};
 parse_command_args(Args) ->
     io:format("~nUnknown Commands:~p~n~n",[Args]),
     error.

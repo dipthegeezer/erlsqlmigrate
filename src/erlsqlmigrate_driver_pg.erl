@@ -1,3 +1,8 @@
+%% @author Dipesh Patel <dipthegeezer.opensource@gmail.com>
+%% @copyright 2012 Dipesh Patel.
+
+%% @doc The postgres sql driver file, uses epgsql.
+
 -module(erlsqlmigrate_driver_pg).
 
 %% ------------------------------------------------------------------
