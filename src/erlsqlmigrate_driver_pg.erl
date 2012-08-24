@@ -4,7 +4,7 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([create/2, up/2]).
+-export([create/2, up/2, down/2]).
 
 -include("migration.hrl").
 
@@ -32,6 +32,14 @@ up(ConnArgs, Migrations) ->
       end, Migrations),
     ok.
 
+down(ConnArgs, Migration) ->
+    Conn = connect(ConnArgs),
+    case applied(Conn, Migration) of
+        false -> throw(migration_not_applied);
+        true -> Fun = fun() -> delete(Conn,Migration) end,
+                transaction(Conn, Migration#migration.down, Fun)
+    end.
+
 %% ------------------------------------------------------------------
 %% Internal Function Definitions
 %% ------------------------------------------------------------------
@@ -57,20 +65,25 @@ squery(Conn, Sql) ->
         Result -> Result
     end.
 
-pquery(Conn, Sql, Params) ->
-    case pgsql:pquery(Conn, Sql, Params) of
+equery(Conn, Sql, Params) ->
+    case pgsql:equery(Conn, Sql, Params) of
         {error, Error} -> throw(Error);
         Result -> Result
     end.
 
 update(Conn,Migration) ->
     Title = iolist_to_binary(Migration#migration.title),
-    pquery(Conn, "INSERT INTO migrations(title,updated) VALUES($1,now())",
+    equery(Conn, "INSERT INTO migrations(title,updated) VALUES($1,now())",
+           [Title]).
+
+delete(Conn,Migration) ->
+    Title = iolist_to_binary(Migration#migration.title),
+    equery(Conn, "DELETE FROM migrations where title = $1",
            [Title]).
 
 applied(Conn, Migration) ->
     Title = iolist_to_binary(Migration#migration.title),
-    case pquery(Conn, "SELECT * FROM migrations where title=$1",[Title]) of
+    case equery(Conn, "SELECT * FROM migrations where title=$1",[Title]) of
         {ok, _Cols, [_Row]} -> true;
         {ok, _Cols, []} -> false
     end.

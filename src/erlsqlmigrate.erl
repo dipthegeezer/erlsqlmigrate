@@ -42,11 +42,11 @@ create(Config, MigDir, Name) ->
 
 up(Config, MigDir, Name) ->
     io:format("~nConfig:~n  ~p~n~nName:~n  ~p~n ~p~n", [Config,Name,MigDir]),
-    erlsqlmigrate_core:up().
+    erlsqlmigrate_core:up(Config,MigDir,Name).
 
 down(Config, MigDir, Name) ->
     io:format("~nConfig:~n  ~p~n~nName:~n  ~p~n ~p~n", [Config,Name,MigDir]),
-    erlsqlmigrate_core:down().
+    erlsqlmigrate_core:down(Config, MigDir, Name).
 
 %% ------------------------------------------------------------------
 %% Internal Function Definitions
