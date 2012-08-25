@@ -37,13 +37,19 @@ up(ConnArgs, Migrations) ->
       end, Migrations),
     ok.
 
-down(ConnArgs, Migration) ->
+down(ConnArgs, Migrations) ->
     Conn = connect(ConnArgs),
-    case applied(Conn, Migration) of
-        false -> throw(migration_not_applied);
-        true -> Fun = fun() -> delete(Conn,Migration) end,
-                transaction(Conn, Migration#migration.down, Fun)
-    end.
+    lists:foreach(
+      fun(Mig) ->
+          case applied(Conn, Mig) of
+              false -> io:format("Skiping ~p it has not been applied~n.",
+                                 [Mig#migration.title]),
+                       ok;
+              true -> Fun = fun() -> delete(Conn,Mig) end,
+                      transaction(Conn, Mig#migration.down, Fun)
+          end
+      end, Migrations),
+    ok.
 
 %% ------------------------------------------------------------------
 %% Internal Function Definitions

@@ -15,6 +15,9 @@
         ]).
 
 -include("migration.hrl").
+
+%%@headerfile "migration.hrl"
+
 %% ------------------------------------------------------------------
 %% Macro Definitions
 %% ------------------------------------------------------------------
@@ -66,14 +69,16 @@ up([{Driver,_ConnArgs}]=Config, MigDir, Name) ->
 %% @doc Run the down migration. Fetch migration files and pass to driver.
 down([{Driver,_ConnArgs}]=Config, MigDir, Name) ->
     Regex = case Name of
-                [] -> throw(no_down_specified);
+                [] -> "*";
                 Name -> "*"++Name++"*"
             end,
     %% I think its sorted but anyway
-    Files = lists:sort(filelib:wildcard(?UPDIR(MigDir,Driver)++"/"++Regex)),
-    [Migration] = get_migrations(Driver, MigDir, Files),
-    io:format("~nMig:~p~n",[Migration]),
-    run_driver(Config, down, Migration).
+    Files = lists:sort(
+              fun(A, B) -> A >= B end,
+              filelib:wildcard(?UPDIR(MigDir,Driver)++"/"++Regex)),
+    Migrations = get_migrations(Driver, MigDir, Files),
+    io:format("~nMig:~p~n",Migrations),
+    run_driver(Config, down, Migrations).
 
 %% ------------------------------------------------------------------
 %% Internal Function Definitions
@@ -92,7 +97,7 @@ run_driver([{pgsql,ConnArgs}],Cmd,Args) ->
 run_driver([{_,_ConnArgs}],_Cmd,_Args) ->
     throw(unknown_database).
 
-%% @spec get_migration(Driver, MigDir, {Name, Timestamp, Up, Down}) -> Record :: #migration{}
+%% @spec get_migration(Driver, MigDir, {Name, Timestamp, Up, Down}) -> migration()
 %%       Driver = atom()
 %%       MigDir = filelib:dirname()
 %%       Name = string()
@@ -116,7 +121,7 @@ get_migration(Driver, MigDir, Name) ->
     get_migration(Driver, MigDir, {Name, Timestamp, [], []}).
 
 
-%% @spec get_migrations(Driver, MigDir, Files) -> [Record :: #migration{}] | {error, errorinfo()}
+%% @spec get_migrations(Driver, MigDir, Files) -> [migration()] | {error, errorinfo()}
 %%       Driver = atom()
 %%       MigDir = filelib:dirname()
 %%       Files = [file:filename()]

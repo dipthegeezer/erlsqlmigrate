@@ -38,14 +38,39 @@ main(Args) ->
             usage(OptSpecList)
     end.
 
+%% @type config() = {atom(),list()}.
+%% The config is composed of the database type and any parameters needed
+%% to start the database connection.
+
+%% @spec create(Config, MigDir, Name) -> ok
+%%       Config = config()
+%%       MigDir = filelib:dirname()
+%%       Name = string()
+%% @throws unknown_database
+%% @doc Create a set of migration files and also run any Database specific
+%% tasks.
 create(Config, MigDir, Name) ->
     io:format("~nConfig:~n  ~p~n~nName:~n  ~p~n ~p~n", [Config,Name,MigDir]),
     erlsqlmigrate_core:create(Config, MigDir, Name).
 
+%% @spec up(Config, MigDir, Name) -> ok
+%%       Config = config()
+%%       MigDir = filelib:dirname()
+%%       Name = string()
+%% @throws unknown_database
+%% @doc Run the 'up' migration. The name can be an empty string in which case
+%% all un-applied migrations will run
 up(Config, MigDir, Name) ->
     io:format("~nConfig:~n  ~p~n~nName:~n  ~p~n ~p~n", [Config,Name,MigDir]),
     erlsqlmigrate_core:up(Config,MigDir,Name).
 
+%% @spec down(Config, MigDir, Name) -> ok
+%%       Config = config
+%%       MigDir = filelib:dirname()
+%%       Name = string()
+%% @throws unknown_database
+%% @doc Run the 'down' migration. The name can be an empty string in which case
+%% all applied migrations will be un-applied.
 down(Config, MigDir, Name) ->
     io:format("~nConfig:~n  ~p~n~nName:~n  ~p~n ~p~n", [Config,Name,MigDir]),
     erlsqlmigrate_core:down(Config, MigDir, Name).
@@ -53,14 +78,25 @@ down(Config, MigDir, Name) ->
 %% ------------------------------------------------------------------
 %% Internal Function Definitions
 %% ------------------------------------------------------------------
+
+%% @spec usage() -> ok
+%% @equiv usage(OptSpecList)
 usage() ->
     usage(option_spec_list()).
 
+%% @spec usage(OptSpecList) -> ok
+%%       OptSpecList = [getopt:option_spec()]
+%%
+%%
+%% @doc Print out the usage commands to standard error.
 usage(OptSpecList) ->
     getopt:usage(OptSpecList, escript:script_name(), "[up, down, create] [name]",
                  [{"command",   "Migration command"},
                  {"name", "Optional migration name"}]).
 
+%% @spec option_spec_list() -> [getopt:option_spec()]
+%%
+%% @doc Return the specification of the command line arguments.
 option_spec_list() ->
     {ok, Cwd } = file:get_cwd(),
     MigrationsDefault = filename:join([Cwd,"migrations"]),
