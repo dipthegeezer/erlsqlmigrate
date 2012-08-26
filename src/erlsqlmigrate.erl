@@ -19,6 +19,12 @@
 main([]) ->
     usage();
 
+%% @spec main(Args) -> ok
+%%       Args = string() | [string()]
+%%
+%% @throws unknown_database
+%% @doc Entry point when running as a script. Parse the args passed in
+%% from the command line and works out what to do.
 main(Args) ->
     OptSpecList = option_spec_list(),
     case getopt:parse(OptSpecList, Args) of
@@ -111,6 +117,11 @@ option_spec_list() ->
      {config_dir,      $c, "config-dir",    {string, ConfigDefault},      "Location of your config files [./config]"}
     ].
 
+%% @spec run(Options, Cmd, Name) -> ok
+%%       Options = [proplists:property()]
+%%       Cmd = atom()
+%%       Name = string()
+%% @doc Run the migration give the commands and arguments provided.
 run(Options, Cmd, Name) ->
     io:format("Options:~n  ~p~n~nNon-option arguments:~n  ~p~p~n", [Options, Cmd, Name]),
     ConfigDir = proplists:get_value(config_dir, Options),
@@ -120,6 +131,10 @@ run(Options, Cmd, Name) ->
     Mod = ?MODULE,
     Mod:Cmd(Config, MigDir, Name).
 
+%% @spec parse_command_args(List) -> {atom(),string()} | error
+%%       List = [string()]
+%%
+%% @doc Parse the list of commands into a form that can be used
 parse_command_args(["create", Name]) ->
     {create,Name};
 parse_command_args(["create"]) ->
