@@ -1,7 +1,4 @@
 * Tidy up logging and verbosity
 * Add readme
-* Add edoc
 * Add tests
-* version it
-* deploy (agner)
 * Fix DB connection

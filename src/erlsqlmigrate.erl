@@ -26,18 +26,15 @@ main([]) ->
 %% @doc Entry point when running as a script. Parse the args passed in
 %% from the command line and works out what to do.
 main(Args) ->
+    ok = load_app(),
     OptSpecList = option_spec_list(),
     case getopt:parse(OptSpecList, Args) of
         {ok, {Options, NonOptArgs}} ->
-            case parse_command_args(NonOptArgs) of
-                {Cmd,Name} ->
-                    case run(Options, Cmd, Name) of
-                        ok ->
-                            ok;
-                        Error ->
-                            io:format("Uncaught error: ~p\n", [Error])
-                    end;
-                error -> usage(OptSpecList)
+            case run(Options, NonOptArgs) of
+                ok ->
+                    ok;
+                Error ->
+                    io:format("Uncaught error: ~p\n", [Error])
             end;
         {error, {Reason, Data}} ->
             io:format("Error: ~s ~p~n~n", [Reason, Data]),
@@ -56,7 +53,6 @@ main(Args) ->
 %% @doc Create a set of migration files and also run any Database specific
 %% tasks.
 create(Config, MigDir, Name) ->
-    io:format("~nConfig:~n  ~p~n~nName:~n  ~p~n ~p~n", [Config,Name,MigDir]),
     erlsqlmigrate_core:create(Config, MigDir, Name).
 
 %% @spec up(Config, MigDir, Name) -> ok
@@ -67,7 +63,6 @@ create(Config, MigDir, Name) ->
 %% @doc Run the 'up' migration. The name can be an empty string in which case
 %% all un-applied migrations will run
 up(Config, MigDir, Name) ->
-    io:format("~nConfig:~n  ~p~n~nName:~n  ~p~n ~p~n", [Config,Name,MigDir]),
     erlsqlmigrate_core:up(Config,MigDir,Name).
 
 %% @spec down(Config, MigDir, Name) -> ok
@@ -78,12 +73,24 @@ up(Config, MigDir, Name) ->
 %% @doc Run the 'down' migration. The name can be an empty string in which case
 %% all applied migrations will be un-applied.
 down(Config, MigDir, Name) ->
-    io:format("~nConfig:~n  ~p~n~nName:~n  ~p~n ~p~n", [Config,Name,MigDir]),
     erlsqlmigrate_core:down(Config, MigDir, Name).
+
 
 %% ------------------------------------------------------------------
 %% Internal Function Definitions
 %% ------------------------------------------------------------------
+
+%% @spec version() -> ok
+%% @doc print version information.
+%%
+version() ->
+    {ok, Vsn} = application:get_key(erlsqlmigrate, vsn),
+    io:format("erlsqlmigrate ~p \n", [Vsn]).
+
+%% @spec load_app() -> ok
+%% @doc Pre-load the app so that we get default configuration
+load_app() ->
+    ok = application:load(erlsqlmigrate).
 
 %% @spec usage() -> ok
 %% @equiv usage(OptSpecList)
@@ -117,19 +124,25 @@ option_spec_list() ->
      {config_dir,      $c, "config-dir",    {string, ConfigDefault},      "Location of your config files [./config]"}
     ].
 
-%% @spec run(Options, Cmd, Name) -> ok
+%% @spec run(Options, NonOptArgs) -> ok
 %%       Options = [proplists:property()]
-%%       Cmd = atom()
-%%       Name = string()
+%%       NonOptArgs = [string()]
+%%
 %% @doc Run the migration give the commands and arguments provided.
-run(Options, Cmd, Name) ->
-    io:format("Options:~n  ~p~n~nNon-option arguments:~n  ~p~p~n", [Options, Cmd, Name]),
-    ConfigDir = proplists:get_value(config_dir, Options),
-    Environment = proplists:get_value(environment, Options),
-    MigDir = proplists:get_value(migration_dir, Options),
-    {ok, Config} = file:consult(filename:join([ConfigDir,Environment++".config"])),
-    Mod = ?MODULE,
-    Mod:Cmd(Config, MigDir, Name).
+run(Options, NonOptArgs) ->
+    case proplists:get_value(version, Options) of
+        true -> version(), ok;
+        false -> case parse_command_args(NonOptArgs) of
+                     {Cmd,Name} ->
+                         ConfigDir = proplists:get_value(config_dir, Options),
+                         Environment = proplists:get_value(environment, Options),
+                         MigDir = proplists:get_value(migration_dir, Options),
+                         {ok, Config} = file:consult(filename:join([ConfigDir,Environment++".config"])),
+                         Mod = ?MODULE,
+                         Mod:Cmd(Config, MigDir, Name);
+                     error -> usage()
+                 end
+    end.
 
 %% @spec parse_command_args(List) -> {atom(),string()} | error
 %%       List = [string()]
@@ -137,9 +150,6 @@ run(Options, Cmd, Name) ->
 %% @doc Parse the list of commands into a form that can be used
 parse_command_args(["create", Name]) ->
     {create,Name};
-parse_command_args(["create"]) ->
-    io:format("~nMust specify a name with `create` command~n~n"),
-    error;
 parse_command_args(["down", Name]) ->
     {down,Name};
 parse_command_args(["down"]) ->
