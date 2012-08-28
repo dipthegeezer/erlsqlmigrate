@@ -25,6 +25,10 @@ Options:
 If you want to run the migrations from your code. There is an API available.
 
 ```
+Config = {pgsql,["host",5432,"database","username","password"]}.
+MigDir = "/some/path/to/toplevel/migration/directory"
+Name = "some-string-or-empty"
+
 erlsqlmigrate:create(Config, MigDir, Name)
 
 erlsqlmigrate:up(Config, MigDir, Name)
@@ -34,6 +38,13 @@ erlsqlmigrate:down(Config, MigDir, Name)
 ```
 
 ## Creating Migrations
+
+Create a config file which contains the database connection parameters. Using the defaults in the script this would 
+sit in ./config/<enviroment>.config. This is basically an erlang term().
+
+```
+{pgsql,["host",5432,"database","username","password"]}.
+```
 
     $ erlsqlmigrate create add-users
 
@@ -57,12 +68,17 @@ If there is a problem then rollback. Note if you don't supply a name it will rol
 
     $ erlsqlmigrate down [add-users]
 
+## Database support
+
+Currently only have Postgres support. Using the wonderful epgsql
+If you would like to add functionality for another Database get in touch. It's fairly easy to
+add support for other databases. The atom pgsql in Config above maps to a driver file that interfaces with epgsql
 
 ## License
 
 (The MIT License)
 
-Copyright (c) 2011 dipthegeezer
+Copyright (c) 2012 dipthegeezer
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
