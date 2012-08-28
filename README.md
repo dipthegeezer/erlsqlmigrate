@@ -27,7 +27,7 @@ If you want to run the migrations from your code. There is an API available.
 ```
 Config = {pgsql,["host",5432,"database","username","password"]}.
 MigDir = "/some/path/to/toplevel/migration/directory"
-Name = "some-string-or-empty"
+Name = "some-string-or-empty-to-do-all"
 
 erlsqlmigrate:create(Config, MigDir, Name)
 
@@ -40,7 +40,7 @@ erlsqlmigrate:down(Config, MigDir, Name)
 ## Creating Migrations
 
 Create a config file which contains the database connection parameters as an erlang term. Using the defaults in the script this would 
-sit in ./config/[enviroment].config.
+sit in ./config/[enviroment].config:
 
 ```
 {pgsql,["host",5432,"database","username","password"]}.
@@ -48,7 +48,7 @@ sit in ./config/[enviroment].config.
 
     $ erlsqlmigrate create add-users
 
-This will create a two files ./migrations/up/[datestamp]_add-users.sql and ./migrations/down/[datestamp]_add-users.sql.
+This will create a two files ./migrations/pgsql/up/[datestamp]_add-users.sql and ./migrations/pgsql/down/[datestamp]_add-users.sql.
 
 All you have to do is populate these with your SQL Command and you are ready to migrate.
 
