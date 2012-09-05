@@ -30,11 +30,13 @@ main(Args) ->
     OptSpecList = option_spec_list(),
     case getopt:parse(OptSpecList, Args) of
         {ok, {Options, NonOptArgs}} ->
-            case run(Options, NonOptArgs) of
+            try(run(Options, NonOptArgs)) of
                 ok ->
                     ok;
                 Error ->
                     io:format("Uncaught error: ~p\n", [Error])
+            catch
+                setup_error -> io:format("~nERROR: Setup not performed please run 'create' command.~n~n", [])
             end;
         {error, {Reason, Data}} ->
             io:format("Error: ~s ~p~n~n", [Reason, Data]),
@@ -150,6 +152,8 @@ run(Options, NonOptArgs) ->
 %% @doc Parse the list of commands into a form that can be used
 parse_command_args(["create", Name]) ->
     {create,Name};
+parse_command_args(["create"]) ->
+    {create,[]};
 parse_command_args(["down", Name]) ->
     {down,Name};
 parse_command_args(["down"]) ->

@@ -26,9 +26,9 @@
 %% already exist
 create(ConnArgs,_Args) ->
     Conn = connect(ConnArgs),
-    case squery(Conn, "SELECT * FROM pg_tables WHERE tablename='migrations'") of
-        {ok, _Cols, [_Row]} -> ok;
-        {ok, _Cols, []} ->
+    case is_setup(Conn) of
+        true -> ok;
+        false ->
             {ok,[],[]} = squery(Conn, "CREATE TABLE migrations(title TEXT PRIMARY KEY,updated TIMESTAMP)"),
             ok
     end.
@@ -37,6 +37,7 @@ create(ConnArgs,_Args) ->
 %%       Config = erlsqlmigrate:config()
 %%       Migrations = [erlsqlmigrate_core:migration()]
 %%
+%% @throws setup_error
 %%
 %% @doc Execute the migrations in the given list of migrations.
 %% Each execution will be wrapped in a transaction and the
@@ -45,6 +46,10 @@ create(ConnArgs,_Args) ->
 %% it will be skipped
 up(ConnArgs, Migrations) ->
     Conn = connect(ConnArgs),
+    case is_setup(Conn) of
+        true -> ok;
+        false -> throw(setup_error)
+    end,
     lists:foreach(
       fun(Mig) ->
           case applied(Conn, Mig) of
@@ -59,6 +64,7 @@ up(ConnArgs, Migrations) ->
 %%       Config = erlsqlmigrate:config()
 %%       Migrations = [erlsqlmigrate_core:migration()]
 %%
+%% @throws setup_error
 %%
 %% @doc Execute the down migrations in the given list of migrations.
 %% Each execution will be wrapped in a transaction and the migrations
@@ -67,6 +73,10 @@ up(ConnArgs, Migrations) ->
 %% will be skipped.
 down(ConnArgs, Migrations) ->
     Conn = connect(ConnArgs),
+    case is_setup(Conn) of
+        true -> ok;
+        false -> throw(setup_error)
+    end,
     lists:foreach(
       fun(Mig) ->
           case applied(Conn, Mig) of
@@ -160,6 +170,17 @@ delete(Conn,Migration) ->
 applied(Conn, Migration) ->
     Title = iolist_to_binary(Migration#migration.title),
     case equery(Conn, "SELECT * FROM migrations where title=$1",[Title]) of
+        {ok, _Cols, [_Row]} -> true;
+        {ok, _Cols, []} -> false
+    end.
+
+%% @spec is_setup(Conn) -> true | false
+%%       Conn = pid()
+%%
+%% @doc Simple function to check if the migrations table is set up
+%% correctly.
+is_setup(Conn) ->
+    case squery(Conn, "SELECT * FROM pg_tables WHERE tablename='migrations'") of
         {ok, _Cols, [_Row]} -> true;
         {ok, _Cols, []} -> false
     end.

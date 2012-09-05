@@ -35,13 +35,15 @@
 %% @throws unknown_database
 %% @doc Creates the migration files ready to be filled in with SQL.
 %% Also calls the Database driver in case there is any setup needed there.
+create(Config, _MigDir, []) ->
+    run_driver(Config,create,[]);
 create([{Driver,_ConnArgs}]=Config,MigDir,Name) ->
     filelib:ensure_dir(?UPDIR(MigDir,Driver)++"/"),
     filelib:ensure_dir(?DOWNDIR(MigDir,Driver)++"/"),
     Migration= get_migration(Driver,MigDir,Name),
     file:write_file(Migration#migration.up_path, <<"">>),
     file:write_file(Migration#migration.down_path, <<"">>),
-    run_driver(Config,create,[MigDir,Name,Migration]).
+    erlsqlmigrate_core:create(Config, MigDir, []).
 
 %% @spec up([{DB,ConnArgs}], MigDir, Name) -> ok
 %%       DB = atom()
