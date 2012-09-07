@@ -31,12 +31,14 @@ main(Args) ->
     case getopt:parse(OptSpecList, Args) of
         {ok, {Options, NonOptArgs}} ->
             try(run(Options, NonOptArgs)) of
-                ok ->
-                    ok;
+                ok -> ok;
                 Error ->
                     io:format("Uncaught error: ~p\n", [Error])
             catch
-                setup_error -> io:format("~nERROR: Setup not performed please run 'create' command.~n~n", [])
+                setup_error ->
+                    io:format("~nERROR: Setup not performed please run 'create' command.~n~n", []);
+                unknown_database ->
+                    io:format("~nERROR: Config contains unimplemented database.~n~n", [])
             end;
         {error, {Reason, Data}} ->
             io:format("Error: ~s ~p~n~n", [Reason, Data]),
