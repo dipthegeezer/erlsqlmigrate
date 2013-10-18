@@ -180,7 +180,7 @@ applied(Conn, Migration) ->
 %% @doc Simple function to check if the migrations table is set up
 %% correctly.
 is_setup(Conn) ->
-    case squery(Conn, "SELECT * FROM pg_tables WHERE tablename='migrations'") of
+    case squery(Conn, "SELECT * FROM pg_tables WHERE tablename='migrations' and schemaname = current_schema()") of
         {ok, _Cols, [_Row]} -> true;
         {ok, _Cols, []} -> false
     end.
