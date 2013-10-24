@@ -31,7 +31,9 @@ create(ConnArgs,_Args) ->
         false ->
             {ok,[],[]} = squery(Conn, "CREATE TABLE migrations(title TEXT PRIMARY KEY,updated TIMESTAMP)"),
             ok
-    end.
+    end,
+    ok = disconnect(Conn),
+    ok.
 
 %% @spec up(Config, Migrations) -> ok
 %%       Config = erlsqlmigrate:config()
@@ -58,6 +60,7 @@ up(ConnArgs, Migrations) ->
                        transaction(Conn, Mig#migration.up, Fun)
           end
       end, Migrations),
+    ok = disconnect(Conn),
     ok.
 
 %% @spec down(Config, Migrations) -> ok
@@ -87,11 +90,18 @@ down(ConnArgs, Migrations) ->
                       transaction(Conn, Mig#migration.down, Fun)
           end
       end, Migrations),
+    ok = disconnect(Conn),
     ok.
 
 %% ------------------------------------------------------------------
 %% Internal Function Definitions
 %% ------------------------------------------------------------------
+
+%% @spec disconnect(Conn) -> ok
+%%
+%% @doc Close existing connection to the postgres database
+disconnect(Conn) ->
+    pgsql:close(Conn).
 
 %% @spec connect(ConnArgs) -> pid()
 %%       ConnArgs = list()
@@ -180,7 +190,7 @@ applied(Conn, Migration) ->
 %% @doc Simple function to check if the migrations table is set up
 %% correctly.
 is_setup(Conn) ->
-    case squery(Conn, "SELECT * FROM pg_tables WHERE tablename='migrations'") of
+    case squery(Conn, "SELECT * FROM pg_tables WHERE tablename='migrations' and schemaname = current_schema()") of
         {ok, _Cols, [_Row]} -> true;
         {ok, _Cols, []} -> false
     end.
