@@ -119,6 +119,7 @@ disconnect(Conn) ->
 %%
 %% @doc Connect to the mysql database using mysql-driver
 connect([Hostname, Port, Database, Username, Password]) ->
+  application:ensure_started(emysql),
   case emysql:add_pool(migration_pool, [ {host, Hostname},
                                          {user, Username},
                                          {password, Password},
