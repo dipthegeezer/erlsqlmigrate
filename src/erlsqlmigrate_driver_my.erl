@@ -15,7 +15,9 @@
 
 -include("migration.hrl").
 
-%% Emysql OK Packet
+%% Emysql Results
+%% Opted not to import since we don't want to my this an application dependency
+%% for Postgres users
 -record(ok_packet, {seq_num :: number(),
                     affected_rows :: number(),
                     insert_id :: number(),
@@ -25,6 +27,14 @@
                          | {error, string(), unicode:latin1_chardata() | unicode:chardata() | unicode:external_chardata()}
                          | {incomplete, string(), binary()}}).
 
+-record(result_packet, {seq_num :: number(), 
+			field_list :: list(),
+			rows, extra}).
+
+-record(error_packet, {seq_num :: number(), 
+		       code :: number(), 
+		       status :: binary(), 
+		       msg :: [byte()]}).
 
 %% ------------------------------------------------------------------
 %% API Function Definitions
@@ -147,10 +157,14 @@ execute_with_success(Conn, Sql, Fun) ->
 execute(Conn, Title, Sql, Params) when is_binary(Title) ->
   execute(Conn, binary_to_list(Title), Sql, Params);
 execute(Conn, Title, Sql, Params) when is_list(Title) ->
-  Hndl = list_to_atom(Title),
-  emysql:prepare(Hndl, Sql),
-  #ok_packet{} = emysql:execute(Conn, Hndl, Params).
-
+  execute(Conn, list_to_atom(Title), Sql, Params);
+execute(Conn, Title, Sql, Params) when is_atom(Title) ->
+  emysql:prepare(Title, Sql),
+  case emysql:execute(Conn, Title, Params) of
+    #ok_packet{}       -> ok;
+    #result_packet{}=R -> R;
+    #error_packet{}=E  -> error(E#error_packet.msg)
+  end.
 %% @spec update(Conn, Migration) -> ok
 %%       Conn = pid()
 %%       Migration = erlsqlmigrate_core:migration()
@@ -158,8 +172,8 @@ execute(Conn, Title, Sql, Params) when is_list(Title) ->
 %% @doc Insert into the migrations table the given migration.
 update(Conn,Migration) ->
   Title = iolist_to_binary(Migration#migration.title),
-  execute(Conn, Migration#migration.title,
-    "INSERT INTO migrations(title,updated) VALUES(?,now())",
+  execute(Conn, add_migration,
+    "INSERT INTO migrations (title, updated) VALUES(?, now())",
     [Title]).
 
 %% @spec delete(Conn, Migration) -> ok
@@ -169,7 +183,7 @@ update(Conn,Migration) ->
 %% @doc Delete the migrations table entry for the given migration
 delete(Conn,Migration) ->
   Title = iolist_to_binary(Migration#migration.title),
-  execute(Conn, Migration#migration.title,
+  execute(Conn, remove_migration,
     "DELETE FROM migrations where title = ?",
     [Title]).
 
@@ -181,8 +195,8 @@ delete(Conn,Migration) ->
 %% querying the migrations table
 applied(Conn, Migration) ->
   Title = iolist_to_binary(Migration#migration.title),
-  Result = execute(Conn, Migration#migration.title,
-                   "SELECT * FROM migrations where title=?",[Title]),
+  Result = execute(Conn, applied_title,
+                   "SELECT * FROM migrations WHERE title = ?;", [Title]),
   case as_json(Result) of
     [_Row] -> true;
     [] -> false
@@ -194,7 +208,7 @@ applied(Conn, Migration) ->
 %% @doc Simple function to check if the migrations table is set up
 %% correctly.
 is_setup(Conn) ->
-  Result = execute(Conn, "SELECT table_name FROM INFORMATION_SCHEMA.tables WHERE table_name=\"migrations\" AND table_schema = DATABASE()"),
+  #result_packet{} = Result = execute(Conn, "SELECT table_name FROM INFORMATION_SCHEMA.tables WHERE table_name=\"migrations\" AND table_schema = DATABASE()"),
   case as_json(Result) of
     [_Row] -> true;
     [] -> false
