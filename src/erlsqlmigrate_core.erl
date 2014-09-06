@@ -96,6 +96,8 @@ down([{Driver,_ConnArgs}]=Config, MigDir, Name) ->
 %% @doc Runs command on the driver for the specified database
 run_driver([{pgsql,ConnArgs}],Cmd,Args) ->
     erlsqlmigrate_driver_pg:Cmd(ConnArgs,Args);
+run_driver([{mysql,ConnArgs}],Cmd,Args) ->
+    erlsqlmigrate_driver_my:Cmd(ConnArgs,Args);
 run_driver([{_,_ConnArgs}],_Cmd,_Args) ->
     throw(unknown_database).
 
