@@ -70,7 +70,7 @@ If there is a problem then rollback. Note if you don't supply a name it will rol
 
 ## Database support
 
-Currently only have Postgres support. Using the wonderful epgsql
-If you would like to add functionality for another Database get in touch. It's fairly easy to
-add support for other databases. The atom pgsql in Config above maps to a driver file that interfaces with epgsql
+Currently only have Postgres support and mysql support.
+If you would like to add functionality for another Database get in touch. 
+It's fairly easy to add support for other databases.
 
