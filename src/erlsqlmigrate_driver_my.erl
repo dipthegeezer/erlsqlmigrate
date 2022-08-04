@@ -104,8 +104,7 @@ down(ConnArgs, Migrations) ->
   lists:foreach(
     fun(Mig) ->
         case applied(Conn, Mig) of
-          false -> io:format("Skiping ~p it has not been applied~n.",
-              [Mig#migration.title]),
+          false ->
             ok;
           true -> Fun = fun() -> delete(Conn,Mig) end,
             execute_with_success(Conn, Mig#migration.down, Fun)

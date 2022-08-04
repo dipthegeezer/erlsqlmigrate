@@ -38,11 +38,15 @@
 create(Config, _MigDir, []) ->
     run_driver(Config,create,[]);
 create([{Driver,_ConnArgs}]=Config,MigDir,Name) ->
+
     filelib:ensure_dir(?UPDIR(MigDir,Driver)++"/"),
     filelib:ensure_dir(?DOWNDIR(MigDir,Driver)++"/"),
     Migration= get_migration(Driver,MigDir,Name),
     file:write_file(Migration#migration.up_path, <<"">>),
-    file:write_file(Migration#migration.down_path, <<"">>),
+    UpPath = filename:join([MigDir,"up"]) ++ "/" ++ Name ++ ".sql",
+    DownPath = filename:join([MigDir,"down"]) ++ "/" ++ Name ++ ".sql",
+    file:copy(UpPath, Migration#migration.up_path),
+    file:copy(DownPath, Migration#migration.down_path),
     erlsqlmigrate_core:create(Config, MigDir, []).
 
 %% @spec up([{DB,ConnArgs}], MigDir, Name) -> ok
@@ -79,7 +83,6 @@ down([{Driver,_ConnArgs}]=Config, MigDir, Name) ->
               fun(A, B) -> A >= B end,
               filelib:wildcard(?UPDIR(MigDir,Driver)++"/"++Regex)),
     Migrations = get_migrations(Driver, MigDir, Files),
-    io:format("~nMig:~p~n",Migrations),
     run_driver(Config, down, Migrations).
 
 %% ------------------------------------------------------------------
